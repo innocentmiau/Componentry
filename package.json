@@ -1,0 +1,27 @@
+{
+  "name": "com.andreleandrodev.componentry",
+  "displayName": "Componentry",
+  "version": "1.0.0",
+  "unity": "6000.3",
+  "description": "Editor-only companion for the Inspector. A row of the selected object's components sits above the Transform, so a long Inspector can be read at a glance: click a chip to narrow the Inspector to that component, type to find one by name, drag to reorder, and carry components to another object. Nothing on the object is changed by looking at it.",
+  "author": {
+    "name": "Andre Leandro",
+    "url": "https://github.com/innocentmiau",
+    "email": "andreleandro.dev@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/innocentmiau/Componentry.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "inspector",
+    "components",
+    "workflow",
+    "editor",
+    "tool"
+  ],
+  "documentationUrl": "https://github.com/innocentmiau/Componentry#readme",
+  "changelogUrl": "https://github.com/innocentmiau/Componentry/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/innocentmiau/Componentry/blob/main/LICENSE.md"
+}

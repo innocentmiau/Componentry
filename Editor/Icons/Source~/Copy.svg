@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Two pages, the front one sitting over the back one with a gap cut around it.
+       Stroke 6 at this size comes out about a pixel wide once the bar draws it small. -->
+  <defs>
+    <mask id="front-gap">
+      <rect x="0" y="0" width="64" height="64" fill="white"/>
+      <rect x="21" y="17" width="36" height="44" rx="10" fill="black"/>
+    </mask>
+  </defs>
+  <g fill="none" stroke="currentColor" stroke-width="6">
+    <rect x="12" y="9" width="26" height="32" rx="5" mask="url(#front-gap)"/>
+    <rect x="26" y="23" width="26" height="32" rx="5"/>
+  </g>
+</svg>
