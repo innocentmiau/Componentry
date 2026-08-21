@@ -41,7 +41,7 @@ namespace Componentry.UI
             // (because normal unity has drop-down menus for copy stuff and I want all in one place easy quick access)
             bool alone = targets.Count == 1 && targets[0] is Transform;
             
-            if (alone && TransformClipboardAccess.Available)
+            if (alone)
                 AddTransform(menu, (Transform)targets[0], changed);
             else
                 AddCopy(menu, targets);
@@ -156,6 +156,8 @@ namespace Componentry.UI
             
             foreach (TransformPart part in PARTS)
             {
+                if (!TransformClipboardAccess.Supports(part)) continue;
+                
                 TransformPart copying = part;
                 menu.AddItem(new GUIContent($"Copy {TransformClipboardAccess.NameOf(part)}"), false, () => TransformClipboardAccess.Copy(copying, transform));
             }
@@ -181,6 +183,8 @@ namespace Componentry.UI
             
             foreach (TransformPart part in PARTS)
             {
+                if (!TransformClipboardAccess.Supports(part)) continue;
+                
                 TransformPart pasting = part;
                 GUIContent label = new GUIContent($"Paste {TransformClipboardAccess.NameOf(part)}");
                 
