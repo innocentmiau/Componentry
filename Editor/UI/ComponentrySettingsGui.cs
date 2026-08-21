@@ -31,6 +31,20 @@ namespace Componentry.UI
         
         private static GUIStyle WrappedMiniLabel => _wrappedMiniLabel ??= new GUIStyle(EditorStyles.miniLabel) { wordWrap = true };
         
+        /*
+         * Built once and kept, and with the domain reload turned off it outlives entering play mode still holding the skin style it was built from.
+         * Dropping it is all that is needed, since the property above builds it again the next time the settings are drawn.
+         *
+         * Only when the reload is off, since with it on the field is cleared already.
+         */
+        [InitializeOnEnterPlayMode]
+        private static void OnEnterPlayMode(EnterPlayModeOptions options)
+        {
+            if (!options.HasFlag(EnterPlayModeOptions.DisableDomainReload)) return;
+            
+            _wrappedMiniLabel = null;
+        }
+        
         public static void Draw()
         {
             float previousLabelWidth = EditorGUIUtility.labelWidth;

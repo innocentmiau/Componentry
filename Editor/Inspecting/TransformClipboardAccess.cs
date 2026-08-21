@@ -27,7 +27,6 @@ namespace Componentry.Inspecting
         private const string QUATERNION_NAME = "Quaternion";
         
         private const string VECTOR3_FORMAT = "Vector3({0:g9},{1:g9},{2:g9})";
-        private const string QUATERNION_FORMAT = "Quaternion({0:g9},{1:g9},{2:g9},{3:g9})";
         
         private static readonly float[] NUMBERS = new float[4];
         
@@ -82,7 +81,7 @@ namespace Componentry.Inspecting
             EditorGUIUtility.systemCopyBuffer = part switch
             {
                 TransformPart.POSITION => Text(transform.localPosition),
-                TransformPart.ROTATION => Text(transform.localRotation),
+                TransformPart.ROTATION => Text(TransformUtils.GetInspectorRotation(transform)),
                 _ => Text(transform.localScale)
             };
             
@@ -109,10 +108,10 @@ namespace Componentry.Inspecting
             
             if (part == TransformPart.ROTATION)
             {
-                if (!TryRotation(text, out Quaternion rotation)) return;
+                if (!TryRotation(text, out Vector3 euler)) return;
                 
                 Undo.RecordObject(transform, "Paste Rotation");
-                transform.localRotation = rotation;
+                TransformUtils.SetInspectorRotation(transform, euler);
                 
                 return;
             }
@@ -163,30 +162,26 @@ namespace Componentry.Inspecting
         
         private static string Text(Vector3 value) => string.Format(CultureInfo.InvariantCulture, VECTOR3_FORMAT, value.x, value.y, value.z);
         
-        private static string Text(Quaternion value) => string.Format(CultureInfo.InvariantCulture, QUATERNION_FORMAT, value.x, value.y, value.z, value.w);
-        
         /*
-         * A rotation is kept as a quaternion, which is what the Transform's own Copy Rotation writes.
-         * A Vector3 is taken as well, and read as euler angles, because that is what the Rotation field in the Inspector holds:
-         * copying from the field and pasting from the chip is the same thing said two ways, and refusing one of them would only be confusing.
+         * A rotation goes on the clipboard as the three euler angles the Inspector shows, which is what the Transform's own Copy Rotation writes.
+         * Those are not the same numbers as 'localEulerAngles': the Inspector keeps its own, so that a rotation typed as 370 stays 370 rather than turning into 10,
+         * and 'TransformUtils' is how they are read and written.
+         *
+         * A quaternion is taken as well, since the editor's clipboard has a slot of its own for one and something else may have put it there.
+         * It is only ever read, never written, so nothing here changes what the clipboard looks like to anybody else.
          */
-        private static bool TryRotation(string text, out Quaternion rotation)
+        private static bool TryRotation(string text, out Vector3 euler)
         {
+            if (TryVector3(text, out euler)) return true;
+            
             if (TryNumbers(text, QUATERNION_NAME, 4))
             {
-                rotation = new Quaternion(NUMBERS[0], NUMBERS[1], NUMBERS[2], NUMBERS[3]);
+                euler = new Quaternion(NUMBERS[0], NUMBERS[1], NUMBERS[2], NUMBERS[3]).eulerAngles;
                 
                 return true;
             }
             
-            if (TryVector3(text, out Vector3 euler))
-            {
-                rotation = Quaternion.Euler(euler);
-                
-                return true;
-            }
-            
-            rotation = Quaternion.identity;
+            euler = Vector3.zero;
             
             return false;
         }

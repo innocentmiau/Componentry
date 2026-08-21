@@ -590,11 +590,12 @@ namespace Componentry.UI
         private void DrawCarryButton(Rect rect, bool copying)
         {
             int carried = ComponentClipboard.Count;
-            bool enabled = copying ? _picked.Count > 0 : carried > 0;
+            int copyable = copying ? PickedCopyable() : 0;
+            bool enabled = copying ? copyable > 0 : carried > 0;
 
             _chipContent.text = string.Empty;
             _chipContent.image = null;
-            _chipContent.tooltip = CarryTooltip(copying, carried);
+            _chipContent.tooltip = CarryTooltip(copying, carried, copyable);
 
             ConsumeRightButton(rect);
 
@@ -621,15 +622,32 @@ namespace Componentry.UI
             GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
         }
 
-        private string CarryTooltip(bool copying, int carried)
+        private string CarryTooltip(bool copying, int carried, int copyable)
         {
             if (copying)
             {
-                return _picked.Count > 0 ? $"Copy the {_picked.Count} picked component(s), to be pasted onto another object" 
+                if (copyable > 0) return $"Copy the {copyable} picked component(s), to be pasted onto another object";
+                
+                // Picked, but nothing worth carrying, which on an object only ever means the Transform and is worth saying rather than leaving a dead button.
+                return _picked.Count > 0 ? "The Transform cannot be copied onto another object, since every object already has one"
                     : "Pick the components to copy first, by clicking their chips";
             }
 
             return carried > 0 ? $"Paste the {carried} copied component(s) onto this object" : "No components have been copied";
+        }
+
+        /*
+         * What a copy would actually carry, rather than what is picked. The clipboard leaves the Transform out,
+         * so counting picks would light the button up for a Transform on its own and then copy nothing at all, leaving paste dead with nothing said about why.
+         */
+        private int PickedCopyable()
+        {
+            int count = 0;
+
+            foreach (Component component in _components)
+                if (component && component is not Transform && _picked.Contains(component.GetInstanceID())) count++;
+
+            return count;
         }
 
         private void CollectPicked()
