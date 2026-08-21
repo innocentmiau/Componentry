@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEditorInternal;
 using UnityEngine;
@@ -99,6 +100,21 @@ namespace Componentry.Core
             if (_scene.IsValid()) EditorSceneManager.ClosePreviewScene(_scene);
             
             _scene = default;
+        }
+        
+        /*
+         * The hidden object and the preview scene behind it do not outlive entering play mode, but with the domain reload turned off the statics naming them do,
+         * which would leave this holding a count of components that are gone and a scene handle for a scene that has been closed.
+         * Clear is what puts all of it back, and it does no harm when there was nothing held, so it is simply called rather than asked about first.
+         *
+         * Only when the reload is off, since with it on the statics have been cleared already.
+         */
+        [InitializeOnEnterPlayMode]
+        private static void OnEnterPlayMode(EnterPlayModeOptions options)
+        {
+            if (!options.HasFlag(EnterPlayModeOptions.DisableDomainReload)) return;
+            
+            Clear();
         }
         
         /// <summary>

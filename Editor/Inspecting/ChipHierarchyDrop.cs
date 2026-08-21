@@ -75,6 +75,22 @@ namespace Componentry.Inspecting
         }
         
         /*
+         * Entering play mode with the domain reload turned off leaves every static here exactly as it was.
+         * A drag still in the air at that moment would go on carrying components the change has since destroyed,
+         * and the drop handler registered for it would stay registered for the rest of the session, answering for a drag that is long over.
+         * Stop puts both back, and it is the same call the end of an ordinary drag makes.
+         *
+         * Only when the reload is off. With it on the statics are cleared out anyway, and this would be asking for something that has already happened.
+         */
+        [InitializeOnEnterPlayMode]
+        private static void OnEnterPlayMode(EnterPlayModeOptions options)
+        {
+            if (!options.HasFlag(EnterPlayModeOptions.DisableDomainReload)) return;
+            
+            Stop();
+        }
+        
+        /*
          * The V2 handler, which differs from the older one only in taking an EntityId where that took an int.
          * The older pair is deprecated as of the Unity this package asks for, and both are the same id underneath.
          */

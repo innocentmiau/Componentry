@@ -1126,6 +1126,21 @@ namespace Componentry.UI
             return height + SearchHeight + SearchGap;
         }
 
+        /*
+         * The styles are built once and kept, and with the domain reload turned off they outlive entering play mode with the rest of the statics here,
+         * still holding the skin textures they were built against.
+         * Dropping the first of them is what EnsureStyles reads as "build the set again", so they are rebuilt on the next repaint rather than trusted across the change.
+         *
+         * Only when the reload is off, since with it on they are gone already.
+         */
+        [InitializeOnEnterPlayMode]
+        private static void OnEnterPlayMode(EnterPlayModeOptions options)
+        {
+            if (!options.HasFlag(EnterPlayModeOptions.DisableDomainReload)) return;
+            
+            _chipStyle = null;
+        }
+        
         private static void EnsureStyles()
         {
             float scale = Scale;
