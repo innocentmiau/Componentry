@@ -1,7 +1,6 @@
 using System;
 using Componentry.Core;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -21,13 +20,6 @@ namespace Componentry.Inspecting
     /// </summary>
     public static class ComponentActions
     {
-        
-        private static readonly MethodInfo MOVE_RELATIVE = typeof(ComponentUtility).GetMethod(
-            "MoveComponentRelativeToComponent",
-            BindingFlags.NonPublic | BindingFlags.Static,
-            null,
-            new[] { typeof(Component), typeof(Component), typeof(bool) },
-            null);
         
         /// <summary>
         /// One component onto the editor's own component clipboard, which is what the Inspector's Copy Component does and writes where its pastes read from.
@@ -206,8 +198,9 @@ namespace Componentry.Inspecting
          * the ones the Inspector does not draw, so a step in the bar and a step on the object are not the same distance.
          * Naming the neighbour has no such problem.
          *
-         * Unity can be told exactly that, in one call and so with one undo entry however far the component travelled,
-         * but only through a method that is internal, so it is reached by reflection and there is a way of doing it without.
+         * Unity can be told exactly that in one call, but only through a method that is internal to the editor,
+         * which is not allowed to be reached for. So the move is walked one step at a time instead and the steps are collapsed into a single undo entry,
+         * which lands the component in the same place and reads the same way in the undo history.
          */
         /// <summary>
         /// Moves a component to a different position place.
@@ -224,27 +217,14 @@ namespace Componentry.Inspecting
             Component neighbour = above ? others[slot] : others[others.Count - 1];
             
             if (!neighbour || neighbour == component) return false;
-            if (MOVE_RELATIVE != null) return MoveRelative(component, neighbour, above);
             
             return MoveInSteps(component, neighbour, above);
-        }
-        
-        private static bool MoveRelative(Component component, Component neighbour, bool above)
-        {
-            try
-            {
-                return MOVE_RELATIVE.Invoke(null, new object[] { component, neighbour, above }) is true;
-            }
-            catch (Exception)
-            {
-                return MoveInSteps(component, neighbour, above);
-            }
         }
         
         // make name nice. nice.
         private static string Nice(Type type) => ObjectNames.NicifyVariableName(type.Name);
         
-        // Called from Reorder or MoveRelative in steps to ensure it ends in the right spot.
+        // Called from Reorder to walk the component to its slot one step at a time, so it ends in the right spot.
         // Since it's arrays we can't literally change one for another because that would change the new_spot component to the one we are swapping from(so if we swapped from 5th to 1st, then the 1st would become 5th, and this way we swap one by one keeping the rest of the orders.
         // yapping yappers.
         private static bool MoveInSteps(Component component, Component neighbour, bool above)

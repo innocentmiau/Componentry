@@ -498,7 +498,7 @@ namespace Componentry.UI
 
             _drag.Order(_components.Count, _order);
 
-            bool showAdd = ComponentrySettings.AddComponent && AddComponentWindowAccess.Available;
+            bool showAdd = ComponentrySettings.AddComponent;
             bool showAll = ShowingShowAll;
             bool showMissing = _missing > 0;
 
@@ -740,7 +740,7 @@ namespace Componentry.UI
             _chipContent.image = null;
             _chipContent.tooltip = $"Add a component to {_target.GameObject.name}";
 
-            if (GUI.Button(rect, _chipContent, _chipStyle) && AddComponentWindowAccess.Open(AddAnchor(rect), _target.GameObject)) GUIUtility.ExitGUI();
+            if (GUI.Button(rect, _chipContent, _chipStyle) && AddComponentWindowAccess.Open(_target.GameObject)) GUIUtility.ExitGUI();
 
             if (Event.current.type != EventType.Repaint) return;
 
@@ -752,12 +752,6 @@ namespace Componentry.UI
             Rect iconRect = new Rect(rect.center.x - size * .5f, rect.center.y - size * .5f, size, size);
 
             GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
-        }
-
-        private Rect AddAnchor(Rect chip)
-        {
-            Rect area = _bar.contentRect;
-            return new Rect(area.x, chip.y, Mathf.Max(area.width, chip.width), chip.height);
         }
 
         private string MissingLabel => _missing == 1 ? "Missing Script" : $"{_missing} Missing Scripts";
