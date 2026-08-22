@@ -20,12 +20,14 @@ namespace Componentry.UI
     {
         
         private const string ICONS_FOLDER = "Editor/Icons";
-        private const string PACKAGE_FALLBACK = "Packages/com.andreleandrodev.componentry";
+        private const string ANCHOR_FOLDER = "Editor/UI";
+        private const string ANCHOR_SUFFIX = "/" + ANCHOR_FOLDER + "/" + nameof(ComponentryIcons) + ".cs";
         
         private static readonly Dictionary<string, Texture> BY_NAME = new Dictionary<string, Texture>();
         private static readonly Dictionary<string, Texture> CUSTOM = new Dictionary<string, Texture>();
         
-        private static string _packagePath;
+        private static string _rootPath;
+        private static bool _rootResolved;
         
         /// <summary>
         /// An icon shipped inside this package, from its Editor/Icons folder.
@@ -41,25 +43,61 @@ namespace Componentry.UI
             
             if (CUSTOM.TryGetValue(key, out Texture found) && found) return found;
             
-            string file = dark ? $"d_{name}" : name;
-            Texture icon = AssetDatabase.LoadAssetAtPath<Texture2D>($"{PackagePath}/{ICONS_FOLDER}/{file}.png");
+            string folder = RootPath;
+            if (string.IsNullOrEmpty(folder)) return null;
             
-            icon = icon ? icon : AssetDatabase.LoadAssetAtPath<Texture2D>($"{PackagePath}/{ICONS_FOLDER}/{name}.png");
+            string file = dark ? $"d_{name}" : name;
+            Texture icon = AssetDatabase.LoadAssetAtPath<Texture2D>($"{folder}/{ICONS_FOLDER}/{file}.png");
+            
+            icon = icon ? icon : AssetDatabase.LoadAssetAtPath<Texture2D>($"{folder}/{ICONS_FOLDER}/{name}.png");
             CUSTOM[key] = icon;
             return icon;
         }
         
-        private static string PackagePath
+        /*
+         * Asked for once and then remembered, including when it comes back as nothing, because the search underneath walks the whole asset database
+         * and a folder that was not found this time will not be found next time either.
+         *
+         * The package manager knows where a package lives, but only while this is installed as one. Dropped into Assets as a plain folder,
+         * which is how the Asset Store delivers it, it is not a package at all and there is nothing to ask, so the folder is found the way anything else is found:
+         * by looking for a file that is known to be in it. The old hardcoded Packages path answered the first case and quietly broke the second.
+         */
+        private static string RootPath
         {
             get
             {
-                if (!string.IsNullOrEmpty(_packagePath)) return _packagePath;
+                if (_rootResolved) return _rootPath;
                 
-                _packagePath = PackageInfo.FindForAssembly(typeof(ComponentryIcons).Assembly)?.assetPath;
-                _packagePath = string.IsNullOrEmpty(_packagePath) ? PACKAGE_FALLBACK : _packagePath;
+                _rootResolved = true;
+                _rootPath = InstalledAsPackage() ?? FoundByAnchor();
                 
-                return _packagePath;
+                return _rootPath;
             }
+        }
+        
+        private static string InstalledAsPackage()
+        {
+            string path = PackageInfo.FindForAssembly(typeof(ComponentryIcons).Assembly)?.assetPath;
+            return string.IsNullOrEmpty(path) ? null : path;
+        }
+        
+        /*
+         * The anchor is this file, since it is the one file guaranteed to be beside the icons whatever the folder above it is called.
+         * A project may well hold another ComponentryIcons.cs, so the match is on the whole tail of the path rather than the name alone,
+         * and the folder it points at has to actually hold the icons before it is believed.
+         */
+        private static string FoundByAnchor()
+        {
+            foreach (string guid in AssetDatabase.FindAssets($"{nameof(ComponentryIcons)} t:MonoScript"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!path.EndsWith(ANCHOR_SUFFIX)) continue;
+                
+                string root = path.Substring(0, path.Length - ANCHOR_SUFFIX.Length);
+                if (AssetDatabase.IsValidFolder($"{root}/{ICONS_FOLDER}")) return root;
+            }
+            
+            return null;
         }
         
         /// <summary>
