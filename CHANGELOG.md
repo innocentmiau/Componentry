@@ -5,6 +5,15 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-09-12
+
+### Fixed
+
+- Picking a chip after leaving Play mode no longer empties the Inspector. An editor that dies while the scene is reloading leaves its box behind in the Inspector's list, and every box after it was being counted one place out, so the picked component was hidden and an empty one shown in its place. Boxes are now matched to their component by the object each one is editing rather than by their place in the list.
+- A filter is no longer left behind on the editors when the domain reloads. The bar puts every editor back on screen before the reload takes it away, instead of leaving boxes hidden with nothing left that knows it hid them.
+- Entering or leaving Play mode now rebuilds the bar, so it is never pointed at components the scene reload has replaced.
+- A filter applied while the Inspector was still building its list is now finished on a later frame rather than dropped halfway.
+
 ## [1.0.1] - 2026-08-22
 
 ### Changed

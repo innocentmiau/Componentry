@@ -16,8 +16,8 @@ namespace Componentry.UI
      * The bar is an IMGUIContainer put into the Inspector's own UIElements tree, directly above the list of component editors.
      * Filtering is then a matter of hiding elements in that list rather than drawing anything: the editors stay Unity's,
      * so a custom editor is still drawn by its custom editor and a Transform still looks like a Transform.
-     * Hiding the wrong element is the whole risk here, which is why the index mapping goes through the drawn list,
-     * counting the boxes the Inspector puts up including the ones for missing scripts, rather than counting chips.
+     * Hiding the wrong element is the whole risk here, which is why a box is matched to its component by the object that box is editing
+     * rather than by its place in the list. See EditorElements for what counting along the list used to get wrong.
      *
      * Nothing is recomputed per frame. The component list, the icons, the measured widths and the filter each have their own dirty flag,
      * set by the events that can actually change them, and a repaint that changes nothing costs a few comparisons.
@@ -237,15 +237,17 @@ namespace Componentry.UI
             if (!_filterDirty) return;
             if (SearchPending) return;
 
-            _filterDirty = false;
-
+            /*
+             * Left dirty until a box has been found for every component, since the Inspector builds that list over several frames
+             * and a filter written against half of it would sit there half applied with nothing left to notice.
+             */
             if (SearchSettled && (ComponentrySettings.SearchProperties || _matched.Count == 0))
             {
-                EditorElements.HideComponents(_editorsList, ComponentStartIndex, _drawn);
+                _filterDirty = !EditorElements.HideComponents(_editorsList, ComponentStartIndex, _components);
                 return;
             }
 
-            EditorElements.Apply(_editorsList, ComponentStartIndex, _drawn, ShownComponents, ShowingMissing);
+            _filterDirty = !EditorElements.Apply(_editorsList, ComponentStartIndex, _components, ShownComponents, ShowingMissing);
         }
 
         private void UpdateSearch()

@@ -71,6 +71,19 @@ namespace Componentry.UI
         // Once per row of the Hierarchy, so the work is done in the drop itself rather than here: this only notices that a drag of ours has arrived.
         private static void OnHierarchyItem(int instanceId, Rect area) => ChipHierarchyDrop.OnHierarchyGUI();
 
+        /*
+         * Entering or leaving play mode reloads the scene, so every component under a bar is a new instance and the ids a filter was written against are gone.
+         * Throwing the bars away and building them again is the only honest answer to that, and it is cheap enough at twice a session.
+         *
+         * Leaving the bars alone here is what left an Inspector showing nothing after play: the bar came back pointed at the new components
+         * while the boxes it had hidden were still hidden, and only changing the selection was enough to sort it out.
+         */
+        private static void OnPlayModeChanged(PlayModeStateChange change)
+        {
+            foreach (ComponentBar bar in BARS)
+                bar.Refresh();
+        }
+
         private static void MarkAllDirty()
         {
             foreach (ComponentBar bar in BARS)
@@ -86,6 +99,8 @@ namespace Componentry.UI
             EditorApplication.update += Update;
             ObjectChangeEvents.changesPublished += OnObjectsChanged;
             Undo.undoRedoPerformed += MarkAllDirty;
+            AssemblyReloadEvents.beforeAssemblyReload += Stop;
+            EditorApplication.playModeStateChanged += OnPlayModeChanged;
 
             // The Hierarchy has to be watched for a chip being dropped into it, and this is the only callback that runs while that window is drawing.
             EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyItem;
@@ -100,6 +115,8 @@ namespace Componentry.UI
             EditorApplication.update -= Update;
             ObjectChangeEvents.changesPublished -= OnObjectsChanged;
             Undo.undoRedoPerformed -= MarkAllDirty;
+            AssemblyReloadEvents.beforeAssemblyReload -= Stop;
+            EditorApplication.playModeStateChanged -= OnPlayModeChanged;
             EditorApplication.hierarchyWindowItemOnGUI -= OnHierarchyItem;
 
             ChipHierarchyDrop.Stop();
